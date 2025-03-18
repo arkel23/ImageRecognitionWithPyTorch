@@ -1,6 +1,7 @@
 import os
 import time
 import yaml
+import math
 import random
 import argparse
 
@@ -353,6 +354,10 @@ def train_loop(args, train_loader, model, criterion, optimizer):
             loss = mixup_criterion(criterion, outputs, y_a, y_b, lam)
         else:
             loss = criterion(outputs, labels)
+
+        # if loss is infinity then stop training
+        assert math.isfinite(loss), f'Loss is not finite: {loss}, stopping training'
+
 
         loss.backward()
         optimizer.step()

@@ -12,9 +12,6 @@ import torch.utils.data as data
 
 from torchvision import datasets, transforms
 
-import wandb
-from einops import reduce
-
 
 def parse_args():
     parser = argparse.ArgumentParser('Arguments for code')
@@ -22,24 +19,21 @@ def parse_args():
     parser.add_argument('--seed', default=0, type=int, help='random seed')
     parser.add_argument('--epochs', type=int, default=2,
                         help='number of training epochs')
-    parser.add_argument('--log_freq', type=int, default=100, help='freq for logging train results')
+    parser.add_argument('--log_freq', type=int, default=100,
+                        help='freq for logging train results')
     # data: dataset and image size
-    parser.add_argument('--dataset_name', default='cifar10', type=str, help='dataset name')
+    parser.add_argument('--dataset_name', default='cifar10', type=str,
+                        help='dataset name')
     parser.add_argument('--dataset_root_path', type=str, default='data',
-                        help='the root directory for where the data/feature/label files are')
+                        help='the root directory for where the data files are')
     parser.add_argument('--image_size', type=int, default=32, help='image_size')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--batch_size', type=int, default=4, help='batch_size')
     # model
-    parser.add_argument('--model_name', type=str, default='lenet')  # , choices=MODELS)
-    parser.add_argument('--pretrained', action='store_true', help='pretrained model on imagenet')
-    # results/wandb
+    parser.add_argument('--model_name', type=str, default='lenet')
+    # results
     parser.add_argument('--results_dir', type=str, default='results')
-    parser.add_argument('--run_name', type=str, default='tutorial',
-                        help='name for run in wandb')
-    parser.add_argument('--project_name', type=str, default='tutorial',
-                        help='project folder in wandb')
 
     args = parser.parse_args()
     args.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -69,11 +63,10 @@ def build_dataloaders(args):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
-    #if args.greyscale:
-    #    transforms.append(transforms.GreyScale())
 
     test_transform = transforms.Compose([
-        # commonly resize then center crop (assume RoI is in center and background on borders) 
+        # commonly resize then center crop (assume RoI is in center and
+        # background on borders) 
         # but in cifar usually directly resize
         transforms.Resize([args.image_size, args.image_size]),
         # transforms.CenterCrop(args.image_size)
@@ -101,80 +94,6 @@ def build_dataloaders(args):
     train_loader = data.DataLoader(train_ds, args.batch_size, shuffle=True, drop_last=True)
     test_loader = data.DataLoader(test_ds, args.batch_size, shuffle=False, drop_last=False)
     return train_loader, test_loader
-
-
-class BasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, padding=1, stride=stride)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1, stride=1)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        # dropout = nn.Dropout(0.5)
-        self.stride = stride
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        # out = out + residual
-        out = self.relu(out)
-
-        return out
-
-
-class ResNet(nn.Module):
-    def __init__(self, num_classes=10, num_layers=2):
-        super().__init__()
-        # the first 2 conv layers are same as below LeNet
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 6, 5),
-            nn.BatchNorm2d(6),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2)
-        )
-
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(6, 16, 5),
-            nn.BatchNorm2d(16),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2)
-        )
-
-        # add residual blocks
-        # self.res_blocks = nn.Sequential(*[BasicBlock(16, 16, 1) for _ in range(2)])
-        self.res_blocks = nn.ModuleList([BasicBlock(16, 16, 1) for _ in range(num_layers)])
-
-        self.classifier = nn.Linear(16, num_classes)
-
-    def forward(self, x):
-        x = self.conv1(x)
-
-        x = self.conv2(x)
-
-        # x = self.res_blocks(x)
-        for block in self.res_blocks:
-            x = block(x)
-
-        # global average pooling (nn.AdaptiveAvgPool2d(1))
-        x = reduce(x, 'b c h w -> b c', 'mean')
-
-        x = self.classifier(x)
-        return x
 
 
 class LeNet(nn.Module):
@@ -216,8 +135,6 @@ class LeNet(nn.Module):
 def build_model(args):
     if args.model_name == 'lenet':
         model = LeNet(args.num_classes, args.image_size)
-    elif args.model_name == 'resnet':
-        model = ResNet(args.num_classes, args.image_size)
 
     model.to(args.device)
     model.zero_grad()
@@ -255,7 +172,6 @@ def train_loop(args, train_loader, model, criterion, optimizer):
         correct += (predicted == labels).sum().item()
 
         # optionally log at each iter or each x iters
-        # wandb.log({'train_loss': loss})
         if idx % args.log_freq == 0:
             acc_iter = 100 * (predicted == labels).sum().item() / images.shape[0]
             print(f'{idx} / {len(train_loader)}, Loss: {loss}, Acc@1: {acc_iter}')
@@ -288,13 +204,7 @@ def test_loop(args, test_loader, model):
     return acc
 
 
-def count_params_single(model):
-    return sum([p.numel() for p in model.parameters()])
-
-
 def main():
-    time_start = time.time()
-
     # options for training from command line
     args = parse_args()
 
@@ -311,10 +221,6 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
 
-    # logger
-    wandb.init(config=args, project=args.project_name)  # project=project_name
-    wandb.run.name = args.run_name
-
     # create directory for results
     os.makedirs(os.path.join(args.results_dir, args.run_name), exist_ok=True)
 
@@ -322,10 +228,8 @@ def main():
     for epoch in range(args.epochs):
         loss, train_acc = train_loop(args, train_loader, model, criterion, optimizer)
 
-        # log to command line and wandb once per epoch
+        # log to command line once per epoch
         print(f'Epoch {epoch} loss: {loss}, acc: {train_acc}')
-        log_dic = {'epoch': epoch, 'train_loss': loss, 'train_acc': train_acc}
-        wandb.log(log_dic)
 
     # evaluate on test data
     test_acc = test_loop(args, test_loader, model)
@@ -339,22 +243,6 @@ def main():
         'optimizer': optimizer.state_dict()
     }
     torch.save(state, os.path.join(args.results_dir, args.run_name, 'last.pth')) 
-
-    # computational cost stats (time, params, memory)
-    time_total = time.time() - time_start
-    time_total = round(time_total / 60, 2)  # mins
-
-    no_params = count_params_single(model)
-    no_params = round(no_params / (1e6), 2)  # millions of parameters
-
-    max_memory = torch.cuda.max_memory_reserved() / (1024 ** 3)
-    max_memory = round(max_memory, 2)
-
-    wandb.run.summary['no_params'] = no_params
-    wandb.run.summary['time_total'] = time_total
-    wandb.run.summary['max_memory'] = max_memory
-    wandb.run.summary['test_acc'] = test_acc
-    wandb.finish()
 
     return 0
 
