@@ -1,0 +1,10 @@
+timm==0.9.12
+wandb
+einops
+# torchcam==0.3.2
+# scipy==1.8.0
+# cv2
+
+
+
+

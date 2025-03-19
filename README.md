@@ -1,6 +1,10 @@
 # Requirements
 python, pytorch, timm, wandb, einops
 
+```
+pip install -r requirements.txt
+```
+
 # Data preparation
 
 Downloads datasets and converts them to df (train/test.csv with class_id/dir format):
