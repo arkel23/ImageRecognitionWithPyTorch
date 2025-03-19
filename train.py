@@ -145,6 +145,13 @@ def parse_args():
     parser.add_argument('--project_name', type=str, default='RecognitionTutorial',
                         help='project folder in wandb')
 
+    # inference
+    parser.add_argument('--images_path', type=str,
+                        default='data/ASDDataset/ASD/51160.jpg',
+                        help='path to folder (with images) or image')
+    parser.add_argument('--vis_mask', type=str, default=None,
+                        help='vis mechanism: https://github.com/frgfm/torch-cam')
+
     args = parser.parse_args()
     args.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -293,12 +300,12 @@ def build_dataloaders(args):
 
 
 class TIMMModel(nn.Module):
-    def __init__(self, model_name, pretrained=False, num_classes=10, image_size=224, sd=0.0):
+    def __init__(self, model_name, pretrained=False, num_classes=10,
+                 image_size=224, sd=0.0):
         super().__init__()
 
-
         assert (model_name in timm.list_models() or \
-            model_name in timm.list_models(pretrained=True)), f'{model_name}' not in timm
+            model_name in timm.list_models(pretrained=True)), f'{model_name} not in timm'
 
 
         if 'vgg' in model_name:
@@ -351,9 +358,8 @@ class TIMMModel(nn.Module):
 
 
 def build_model(args):
-    if args.model_name in timm.list_models(pretrained=args.pretrained):
-        model = TIMMModel(args.model_name, args.pretrained, args.num_classes,
-                          args.image_size, args.sd)
+    model = TIMMModel(args.model_name, args.pretrained, args.num_classes,
+                        args.image_size, args.sd)
 
     model.to(args.device)
     model.zero_grad()
@@ -457,7 +463,8 @@ def set_results(args):
     # create directory for results
     if not args.run_name:
         args.run_name = f'{args.dataset_name}_{args.model_name}_{args.serial}'
-    os.makedirs(os.path.join(args.results_dir, args.run_name), exist_ok=True)
+    args.results_dir = os.path.join(args.results_dir, args.run_name)
+    os.makedirs(args.results_dir, exist_ok=True)
 
     # logger
     wandb.init(config=args, project=args.project_name)
@@ -474,7 +481,7 @@ def train_end(args, model, test_acc, optimizer, time_start):
         'accuracy': test_acc,
         'optimizer': optimizer.state_dict()
     }
-    torch.save(state, os.path.join(args.results_dir, args.run_name, 'last.pth')) 
+    torch.save(state, os.path.join(args.results_dir, 'last.pth')) 
 
     # computational cost stats (time, params, memory)
     time_total = time.time() - time_start
@@ -497,15 +504,7 @@ def train_end(args, model, test_acc, optimizer, time_start):
     return 0
 
 
-def main():
-    time_start = time.time()
-
-    # options for training from command line
-    args = parse_args()
-
-    # set seed (to avoid randomness)
-    set_random_seed(args.seed)
-
+def setup_env(args):
     # data loaders for train and test
     train_loader, test_loader = build_dataloaders(args)
 
@@ -517,7 +516,22 @@ def main():
         criterion = LabelSmoothingCrossEntropy(args.smoothing)
     else:
         criterion = torch.nn.CrossEntropyLoss()
+
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
+
+    return train_loader, test_loader, model, criterion, optimizer
+
+
+def main():
+    time_start = time.time()
+
+    # options for training from command line
+    args = parse_args()
+
+    # set seed (to avoid randomness)
+    set_random_seed(args.seed)
+
+    train_loader, test_loader, model, criterion, optimizer = setup_env(args)
 
     # for saving results
     set_results(args)

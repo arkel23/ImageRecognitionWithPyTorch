@@ -16,7 +16,7 @@ from einops import rearrange
 from torchcam import methods
 
 
-from train import parse_args, build_model
+from train import parse_args, setup_env
 
 
 
@@ -282,12 +282,15 @@ def build_transform(image_size=224):
 
 
 def prepare_inference(args):
-    model = build_model(args)
+    _, _, model, _, _ = setup_env(args)
+
+    args.results_dir = 'results_inference'
+    if not args.run_name:
+        args.run_name = f'{args.dataset_name}_{args.model_name}_{args.serial}'
+    args.results_dir = os.path.join(args.results_dir, args.run_name)
+    os.makedirs(args.results_dir, exist_ok=True)
 
     layers = get_layers(model, args.model_name)
-
-    # prepare model
-    # _, _, hook = build_environment_inference(args)
 
     hook = VisHook(model, layers, args.vis_mask, args.device)
 
@@ -314,17 +317,17 @@ def prepare_img(fn, args, transform):
     return img
 
 
-def inference_single(args, hook, img, dic_classid_classname=None,
-                     fn=None, save=False):
+def inference_single(hook, img, dic_classid_classname=None,
+                     save_fp=None, save=False):
     # forward image through model
-    if fn and save:
-        preds, pil_image = hook.inference_save_vis(args, img, save_name=fn)
+    if save_fp and save:
+        preds, pil_image = hook.inference_save_vis(img, save_fp)
     else:
         preds, _ = hook.inference(img)
 
     # print predictions
     preds = preds.squeeze(0)
-    for i, idx in enumerate(torch.topk(preds, k=3).indices.tolist()):
+    for i, idx in enumerate(torch.topk(preds, k=2).indices.tolist()):
         prob = torch.softmax(preds, -1)[idx].item()
         if dic_classid_classname is not None:
             classname = dic_classid_classname[idx]
@@ -350,14 +353,15 @@ def inference_all(args):
 
     for file in files_all:
         print(file)
-        save_fn = os.path.splitext(os.path.split(file)[1])[0]
+        fn = os.path.splitext(os.path.split(file)[1])[0]
+        save_fp = os.path.join(args.results_dir, fn)
 
         # prepare each image for inference: transform and make into batch of 1
         img = prepare_img(file, args, transform)
 
         # Classify
-        inference_single(args, hook, img, dic_classid_classname,
-                         save_fn, save=args.vis_mask)
+        inference_single(hook, img, dic_classid_classname,
+                         save_fp, save=args.vis_mask)
 
 
     print('Finished.')
@@ -366,7 +370,6 @@ def inference_all(args):
 
 def main():
     args = parse_args()
-    args.results_dir = 'results_inference'
 
     inference_all(args)
 

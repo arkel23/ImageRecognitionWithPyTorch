@@ -1,5 +1,5 @@
 dataset_name: 'abide'
-dataset_root_path: '../../data/medical/ABIDEI/ASDDataset'
+dataset_root_path: './data/ASDDataset'
 df_train: 'train.csv'
 df_trainval: train_val.csv
 df_val: 'val.csv'
