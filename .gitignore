@@ -21,6 +21,7 @@
 !requirements_conda.txt
 
 # directories
+**/data/
 **/ckpts/
 **/flagged/
 **/wandb/

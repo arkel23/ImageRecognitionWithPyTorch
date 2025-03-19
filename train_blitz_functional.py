@@ -16,7 +16,8 @@ from torchvision import datasets, transforms
 def parse_args():
     parser = argparse.ArgumentParser('Arguments for code')
     # training in general
-    parser.add_argument('--seed', default=0, type=int, help='random seed')
+    parser.add_argument('--serial', type=int, default=0, help='id for run')
+    parser.add_argument('--seed', type=int, default=0, help='random seed')
     parser.add_argument('--epochs', type=int, default=2,
                         help='number of training epochs')
     parser.add_argument('--log_freq', type=int, default=100,
@@ -52,6 +53,8 @@ def build_dataloaders(args):
     # 32x32 -> 36x36 -random crop-> 32x32
     # lots of different augmentations currently
     resize_size = int(args.image_size // 0.875)
+
+
     train_transform = transforms.Compose([
         # from PIL import Image
         # img = Image.open('our_image.jpg')
@@ -64,6 +67,7 @@ def build_dataloaders(args):
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
 
+
     test_transform = transforms.Compose([
         # commonly resize then center crop (assume RoI is in center and
         # background on borders) 
@@ -73,6 +77,7 @@ def build_dataloaders(args):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
+
 
     # choose dataset, download train and test splits if needed
     if args.dataset_name == 'cifar10':
@@ -87,6 +92,7 @@ def build_dataloaders(args):
         test_ds = datasets.CIFAR100(root=args.dataset_root_path, train=False,
                                     transform=test_transform, download=True)
         args.num_classes = 100
+
 
     # shuffle so that each epoch and each iteration are different
     # (stochasticness can be good for training deep learning models), drop_last for train speed
@@ -222,6 +228,7 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
 
     # create directory for results
+    args.run_name = f'{args.dataset_name}_lenet_{args.serial}'
     os.makedirs(os.path.join(args.results_dir, args.run_name), exist_ok=True)
 
     # train model: loop through data for x epochs
