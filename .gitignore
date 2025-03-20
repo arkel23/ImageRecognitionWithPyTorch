@@ -28,10 +28,7 @@
 **/data/*/*
 !**/assets/*
 !**/data/**/*.csv
-!**/samples/**/*rena*
-!**/samples/**/cub*
-!**/samples/**/homura*
-!**/samples/**/notarctia*
+!**/samples/**/*
 **/results*/*
 **/results_train/*
 !**/results_inference/**/homura*_crops*

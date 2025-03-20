@@ -147,7 +147,7 @@ def parse_args():
 
     # inference
     parser.add_argument('--images_path', type=str,
-                        default='data/ASDDataset/ASD/51160.jpg',
+                        default='samples/asd_51160.jpg',
                         help='path to folder (with images) or image')
     parser.add_argument('--vis_mask', type=str, default=None,
                         help='vis mechanism: https://github.com/frgfm/torch-cam')
