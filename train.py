@@ -367,8 +367,12 @@ def build_model(args, print_model=False):
         print(model)
 
     if args.ckpt_path:
-        state_dict = torch.load(
-            args.ckpt_path, map_location=torch.device('cpu'))['model']
+        try:
+            state_dict = torch.load(
+                args.ckpt_path, map_location=torch.device('cpu'))['model']
+        except:
+            state_dict = torch.load(
+                args.ckpt_path, map_location=torch.device('cpu'), weights_only=False)['model']
 
         ret = model.load_state_dict(state_dict, strict=False)
 
