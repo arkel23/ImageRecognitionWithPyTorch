@@ -357,13 +357,14 @@ class TIMMModel(nn.Module):
         return x
 
 
-def build_model(args):
+def build_model(args, print_model=False):
     model = TIMMModel(args.model_name, args.pretrained, args.num_classes,
                         args.image_size, args.sd)
 
     model.to(args.device)
     model.zero_grad()
-    print(model)
+    if print_model:
+        print(model)
 
     if args.ckpt_path:
         state_dict = torch.load(
@@ -504,7 +505,7 @@ def train_end(args, model, test_acc, optimizer, time_start):
     return 0
 
 
-def setup_env(args):
+def setup_env(args, print_model=False):
     # data loaders for train and test
     train_loader, test_loader = build_dataloaders(args)
 
@@ -531,7 +532,7 @@ def main():
     # set seed (to avoid randomness)
     set_random_seed(args.seed)
 
-    train_loader, test_loader, model, criterion, optimizer = setup_env(args)
+    train_loader, test_loader, model, criterion, optimizer = setup_env(args, print_model=True)
 
     # for saving results
     set_results(args)

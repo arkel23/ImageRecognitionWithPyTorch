@@ -37,7 +37,16 @@ python run.py
 python run.py --cfg configs/abide.yaml
 ```
 
-Inference:
+# Inference:
+
+Single image (can use a folder instead of image to inference over a folder):
+
 ```
 python inference.py --cfg configs/abide.yaml --ckpt_path results/abide_resnet18_0/last.pth --images_path data/ASDDataset/ASD/51160.jpg --vis_mask GradCAM
+```
+
+Demo with Gradio (need to adjust datasets, ckpts for other cases):
+
+```
+python demo.py
 ```

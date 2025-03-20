@@ -144,9 +144,9 @@ class VisHook:
             ax.axis('off')
             ax.imshow(np_arr)
 
-        pil_image = save_images(fig, fp)
-            
-        return preds, pil_image
+        save_images(fig, fp)
+
+        return preds, masked_imgs[0]
 
 
 def calc_masks(features, vis_mask='GradCAM'):
