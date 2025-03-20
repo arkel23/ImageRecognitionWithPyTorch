@@ -510,7 +510,7 @@ def setup_env(args, print_model=False):
     train_loader, test_loader = build_dataloaders(args)
 
     # build our model
-    model = build_model(args)
+    model = build_model(args, print_model)
 
     # loss function and optimizer to guide training through backpropagation
     if args.smoothing:
