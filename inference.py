@@ -293,6 +293,7 @@ def prepare_inference(args):
 
     layers = get_layers(model, args.model_name)
 
+    # allow us to retrieve intermediate outputs for visualization
     hook = VisHook(model, layers, args.vis_mask, args.device)
 
     # prepare inference transform
@@ -346,11 +347,11 @@ def inference_single(hook, img, dic_classid_classname=None,
 
 
 def inference_all(args):
-    # search for all images in folder / all images from .txt/csv file / single image path
-    files_all = search_images(args.images_path)
-
     # prepare model and transform for inference
     hook, transform, dic_classid_classname = prepare_inference(args)
+
+    # search for all images in folder / all images from .txt/csv file / single image path
+    files_all = search_images(args.images_path)
 
     for file in files_all:
         print(file)
