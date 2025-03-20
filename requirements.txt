@@ -1,7 +1,7 @@
-# timm==0.9.12
 wandb
 einops
-gradio==3.25.0
+# timm==0.9.12
+# gradio==3.25.0
 # torchcam==0.3.2
 # opencv-python
 

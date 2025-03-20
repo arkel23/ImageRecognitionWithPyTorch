@@ -207,8 +207,9 @@ def apply_mask(img, mask):
     return result
 
 
-def save_images(fig, fp):
-    fig.savefig(fp, dpi=300, bbox_inches='tight', pad_inches=0.01)
+def save_images(fig, fp, dpi=600):
+    # the higher the dpi the higher the resolution in saved file
+    fig.savefig(fp, dpi=dpi, bbox_inches='tight', pad_inches=0.01)
     print('Saved ', fp)
     return 0
 
@@ -354,7 +355,7 @@ def inference_all(args):
     for file in files_all:
         print(file)
         fn = os.path.splitext(os.path.split(file)[1])[0]
-        save_fp = os.path.join(args.results_dir, fn)
+        save_fp = os.path.join(args.results_dir, f'{fn}.png')
 
         # prepare each image for inference: transform and make into batch of 1
         img = prepare_img(file, args, transform)
