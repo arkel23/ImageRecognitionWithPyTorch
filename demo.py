@@ -21,15 +21,12 @@ def demo(file_path, vis_mask='GradCAM', dataset='abide'):
             if hasattr(args, k):
                 setattr(args, k, v)
 
-    print(args)
-    print(file_path, dataset, args.ckpt_path)
 
     # prepare model and transform for inference
     hook, transform, dic_classid_classname = prepare_inference(args)
 
     # prepare each image for inference: transform and make into batch of 1
     img = prepare_img(file_path, args, transform)
-    print(img.shape)
 
     save_fp = os.path.join(args.results_dir, 'temp.jpg')
     top1_text, masked_image = inference_single(hook, img, dic_classid_classname,
