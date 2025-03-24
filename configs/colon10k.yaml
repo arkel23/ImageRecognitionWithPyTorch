@@ -1,0 +1,10 @@
+dataset_name: 'colon10k'
+dataset_root_path: './data/LC25k/lung_colon_image_set/'
+df_train: 'colon10k_train.csv'
+df_trainval: colon10k_train_val.csv
+df_val: 'colon10k_val.csv'
+df_test: 'colon10k_test.csv'
+folder_train: 'colon_image_sets'
+folder_val: 'colon_image_sets'
+folder_test: 'colon_image_sets'
+df_classid_classname: 'colon10k_classid_classname.csv'
