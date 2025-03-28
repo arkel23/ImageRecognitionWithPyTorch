@@ -317,9 +317,15 @@ class TIMMModel(nn.Module):
                 model_name, pretrained=pretrained, num_classes=0,
                 img_size=image_size, drop_path_rate=sd, global_pool='')
         else:
-            self.model = timm.create_model(
-                model_name, pretrained=pretrained, num_classes=0,
-                drop_path_rate=sd, global_pool='')
+            try:
+                self.model = timm.create_model(
+                    model_name, pretrained=pretrained, num_classes=0,
+                    drop_path_rate=sd, global_pool='')
+            except:
+                # certain models do not have drop_path_rate
+                self.model = timm.create_model(
+                    model_name, pretrained=pretrained, num_classes=0,
+                    global_pool='')
 
 
         _, d, bsd = self.get_out_features(image_size)
@@ -510,6 +516,9 @@ def train_end(args, model, test_acc, optimizer, time_start):
 
 
 def setup_env(args, print_model=False):
+    # set seed (to avoid randomness)
+    set_random_seed(args.seed)
+
     # data loaders for train and test
     train_loader, test_loader = build_dataloaders(args)
 
@@ -532,9 +541,6 @@ def main():
 
     # options for training from command line
     args = parse_args()
-
-    # set seed (to avoid randomness)
-    set_random_seed(args.seed)
 
     train_loader, test_loader, model, criterion, optimizer = setup_env(args, print_model=True)
 
